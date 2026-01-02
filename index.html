@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Premium Currency Tool</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+
+<style>
+body{
+    margin:0;
+    height:100vh;
+    background:radial-gradient(circle at top,#1a1a1a,#000);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:Segoe UI, Arial, sans-serif;
+    color:#fff;
+}
+
+.card{
+    position:relative;
+    width:400px;
+    padding:34px 26px;
+    border-radius:16px;
+    background:linear-gradient(145deg,#222,#111);
+    box-shadow:0 28px 70px rgba(0,0,0,.95);
+}
+
+.brand{
+    position:absolute;
+    top:14px;
+    left:16px;
+    font-size:12px;
+    color:#aaa;
+}
+
+label{
+    display:block;
+    margin-top:14px;
+    font-size:14px;
+}
+
+.input-row{
+    display:flex;
+    gap:8px;
+}
+
+input, select{
+    width:100%;
+    margin-top:6px;
+    padding:11px;
+    border-radius:7px;
+    border:none;
+    font-size:15px;
+}
+
+.result{
+    margin-top:22px;
+    background:#0b0b0b;
+    padding:18px;
+    border-radius:10px;
+    line-height:1.9;
+    font-size:15px;
+    min-height:230px;
+}
+
+.highlight{
+    font-size:18px;
+    color:#0a84ff;
+    font-weight:600;
+}
+
+.row{ margin-top:8px; }
+.client{ font-weight:600; }
+.profit{ font-weight:600; color:#00c853; }
+
+.copy-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+}
+
+.copy-icon{
+    cursor:pointer;
+    opacity:.6;
+}
+
+.copy-icon:hover{ opacity:1; }
+
+.toast{
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    background:#111;
+    color:#00ff9c;
+    padding:10px 16px;
+    border-radius:8px;
+    font-size:14px;
+    opacity:0;
+    pointer-events:none;
+    transition:.3s;
+}
+
+.toast.show{ opacity:1; }
+
+hr{
+    border:0;
+    border-top:1px solid #222;
+    margin:14px 0;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+    <div class="brand">Built by Faisal Aslam – SEBT-15</div>
+
+    <label>Currency Amount</label>
+    <input type="number" id="amount">
+
+    <label>Currency Rate Against USDT</label>
+    <input type="number" id="currencyUsdt" step="0.0001">
+
+    <label>USDT → PKR Rate</label>
+    <input type="number" id="usdtPkr" step="0.01">
+
+    <label>Client Rate</label>
+    <div class="input-row">
+        <input type="number" id="clientRate" step="0.0001">
+        <select id="clientType">
+            <option value="PKR">PKR</option>
+            <option value="USDT">USDT</option>
+        </select>
+    </div>
+
+    <div class="result" id="output">
+        Enter values above to see result.
+    </div>
+</div>
+
+<div class="toast" id="toast">Copied successfully</div>
+
+<script>
+const inputs = document.querySelectorAll("input, select");
+const output = document.getElementById("output");
+const toast = document.getElementById("toast");
+
+inputs.forEach(el => el.addEventListener("input", calculate));
+
+function copyText(text){
+    navigator.clipboard.writeText(text);
+    toast.classList.add("show");
+    setTimeout(()=>toast.classList.remove("show"),1500);
+}
+
+function calculate(){
+    const amount = +amountInput.value;
+    const rate = +currencyUsdt.value;
+    const usdtPkr = +usdtPkrInput.value;
+    const clientRate = +clientRateInput.value;
+    const type = clientType.value;
+
+    let html = "";
+
+    if(amount && rate){
+        const marketUSDT = amount / rate;
+        html += `<div class="row"><b>Currency → USDT:</b> ${marketUSDT.toFixed(3)}</div>`;
+
+        if(usdtPkr){
+            const totalPKR = marketUSDT * usdtPkr;
+            html += `
+            <hr>
+            <div class="row copy-row">
+                <span><b>Total PKR:</b> ${totalPKR.toLocaleString()} PKR</span>
+                <span class="copy-icon" onclick="copyText('${totalPKR.toLocaleString()} PKR')">📋</span>
+            </div>`;
+        }
+
+        if(clientRate && type==="PKR" && usdtPkr){
+            const clientPKR = clientRate * amount;
+            const profitPKR = marketUSDT*usdtPkr - clientPKR;
+
+            html += `
+            <div class="row client copy-row">
+                <span>Client PKR: ${clientPKR.toLocaleString()} PKR</span>
+                <span class="copy-icon" onclick="copyText('${clientPKR.toLocaleString()} PKR')">📋</span>
+            </div>
+            <div class="row profit copy-row">
+                <span>Your Profit: ${profitPKR.toFixed(2)} PKR</span>
+                <span class="copy-icon" onclick="copyText('${profitPKR.toFixed(2)} PKR')">📋</span>
+            </div>`;
+        }
+
+        if(clientRate && type==="USDT"){
+            const clientUSDT = amount / clientRate;
+            const profitUSDT = marketUSDT - clientUSDT;
+
+            html += `
+            <div class="row client copy-row">
+                <span>Client USDT: ${clientUSDT.toFixed(2)} USDT</span>
+                <span class="copy-icon" onclick="copyText('${clientUSDT.toFixed(2)} USDT')">📋</span>
+            </div>
+            <div class="row profit copy-row">
+                <span>Your Profit: ${profitUSDT.toFixed(2)} USDT</span>
+                <span class="copy-icon" onclick="copyText('${profitUSDT.toFixed(2)} USDT')">📋</span>
+            </div>`;
+        }
+    }
+
+    output.innerHTML = html || "Enter values above to see result.";
+}
+
+// PWA
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js");
+}
+</script>
+
+</body>
+</html>
