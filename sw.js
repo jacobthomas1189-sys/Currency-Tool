@@ -1,4 +1,4 @@
-const CACHE_NAME = "currency-tool-v7";
+const CACHE_NAME = "currency-tool-v8";
 
 self.addEventListener("install", event => {
     event.waitUntil(
@@ -28,6 +28,8 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
     event.respondWith(
-        caches.match(event.request).then(res => res || fetch(event.request))
+        caches.match(event.request).then(res => {
+            return res || fetch(event.request);
+        })
     );
 });
