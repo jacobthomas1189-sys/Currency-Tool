@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Premium Currency Tool</title>
 
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#000000">
-
 <style>
 body{
     margin:0;
@@ -74,9 +71,17 @@ input, select{
 }
 
 .row{ margin-top:8px; }
+.total{ font-weight:500; }
 .client{ font-weight:600; }
 .profit{ font-weight:600; color:#00c853; }
 
+hr{
+    border:0;
+    border-top:1px solid #222;
+    margin:14px 0;
+}
+
+/* Copy rows */
 .copy-row{
     display:flex;
     justify-content:space-between;
@@ -92,6 +97,7 @@ input, select{
 
 .copy-icon:hover{ opacity:1; }
 
+/* Toast */
 .toast{
     position:fixed;
     bottom:20px;
@@ -109,12 +115,6 @@ input, select{
 }
 
 .toast.show{ opacity:1; }
-
-hr{
-    border:0;
-    border-top:1px solid #222;
-    margin:14px 0;
-}
 </style>
 </head>
 
@@ -196,14 +196,16 @@ function calculate(){
             html += `
                 <div class="highlight row">Final Currency → PKR Rate: ${finalRate.toFixed(2)}</div>
                 <hr>
-                <div class="row copy-row">
+                <div class="row total copy-row">
                     <span><b>Total PKR:</b> ${totalPKR.toLocaleString(undefined,{maximumFractionDigits:0})} PKR</span>
                     <span class="copy-icon" onclick="copyText('${totalPKR.toLocaleString()} PKR')">📋</span>
                 </div>
             `;
         }
 
+        /* ===== PKR MODE ===== */
         if(clientRate && clientType === "PKR" && usdtPkr){
+
             const clientPKR = clientRate * amount;
             const profitPKR = (marketUSDT * usdtPkr) - clientPKR;
 
@@ -214,13 +216,15 @@ function calculate(){
                 </div>
 
                 <div class="row profit copy-row">
-                    <span><b>Your Profit:</b> ${profitPKR.toFixed(2)} PKR</span>
+                    <span><b>Your Profit:</b> ${profitPKR.toLocaleString(undefined,{minimumFractionDigits:2})} PKR</span>
                     <span class="copy-icon" onclick="copyText('${profitPKR.toFixed(2)} PKR')">📋</span>
                 </div>
             `;
         }
 
+        /* ===== USDT MODE (FIXED) ===== */
         if(clientRate && clientType === "USDT"){
+
             const clientUSDT = amount / clientRate;
             const profitUSDT = marketUSDT - clientUSDT;
 
@@ -239,12 +243,6 @@ function calculate(){
     }
 
     output.innerHTML = html || "Enter values above to see result.";
-}
-</script>
-
-<script>
-if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js");
 }
 </script>
 
