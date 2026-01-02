@@ -22,6 +22,7 @@ body{
 .card{
     position:relative;
     width:400px;
+    max-width:92%;
     padding:34px 26px;
     border-radius:16px;
     background:linear-gradient(145deg,#222,#111);
@@ -63,7 +64,7 @@ input, select{
     border-radius:10px;
     line-height:1.9;
     font-size:15px;
-    min-height:230px;
+    min-height:220px;
 }
 
 .highlight{
@@ -73,7 +74,9 @@ input, select{
 }
 
 .row{ margin-top:8px; }
-.profit{ color:#00c853; font-weight:600; }
+.total{ font-weight:500; }
+.client{ font-weight:600; }
+.profit{ font-weight:600; color:#00c853; }
 
 hr{
     border:0;
@@ -81,10 +84,12 @@ hr{
     margin:14px 0;
 }
 
+/* Copy */
 .copy-row{
     display:flex;
     justify-content:space-between;
     align-items:center;
+    gap:10px;
 }
 
 .copy-icon{
@@ -93,6 +98,7 @@ hr{
 }
 .copy-icon:hover{ opacity:1; }
 
+/* Toast */
 .toast{
     position:fixed;
     bottom:20px;
@@ -104,7 +110,9 @@ hr{
     border-radius:8px;
     font-size:14px;
     opacity:0;
+    pointer-events:none;
     transition:.3s;
+    box-shadow:0 10px 30px rgba(0,0,0,.6);
 }
 .toast.show{ opacity:1; }
 </style>
@@ -113,21 +121,20 @@ hr{
 <body>
 
 <div class="card">
-
     <div class="brand">Built by Faisal Aslam – SEBT-15</div>
 
     <label>Currency Amount</label>
-    <input type="number" id="amount" placeholder="Enter amount">
+    <input type="number" id="amount" placeholder="e.g. 1000">
 
     <label>Currency Rate Against USDT</label>
-    <input type="number" id="currencyUsdt" step="0.0001">
+    <input type="number" id="currencyUsdt" step="0.0001" placeholder="e.g. 1.015">
 
     <label>USDT → PKR Rate</label>
-    <input type="number" id="usdtPkr" step="0.01">
+    <input type="number" id="usdtPkr" step="0.01" placeholder="e.g. 287">
 
     <label>Client Rate</label>
     <div class="input-row">
-        <input type="number" id="clientRate" step="0.0001">
+        <input type="number" id="clientRate" step="0.0001" placeholder="Client rate">
         <select id="clientType">
             <option value="PKR">PKR</option>
             <option value="USDT">USDT</option>
@@ -137,103 +144,98 @@ hr{
     <div class="result" id="output">
         Enter values above to see result.
     </div>
-
 </div>
 
 <div class="toast" id="toast">Copied successfully</div>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+const amountInput = document.getElementById("amount");
+const currencyUsdtInput = document.getElementById("currencyUsdt");
+const usdtPkrInput = document.getElementById("usdtPkr");
+const clientRateInput = document.getElementById("clientRate");
+const clientTypeInput = document.getElementById("clientType");
+const output = document.getElementById("output");
+const toast = document.getElementById("toast");
 
-    const amount = document.getElementById("amount");
-    const currencyUsdt = document.getElementById("currencyUsdt");
-    const usdtPkr = document.getElementById("usdtPkr");
-    const clientRate = document.getElementById("clientRate");
-    const clientType = document.getElementById("clientType");
-    const output = document.getElementById("output");
-    const toast = document.getElementById("toast");
+document.querySelectorAll("input, select").forEach(el=>{
+    el.addEventListener("input", calculate);
+});
 
-    window.copyText = text => {
-        navigator.clipboard.writeText(text);
-        toast.classList.add("show");
-        setTimeout(()=>toast.classList.remove("show"),1500);
-    };
+function showToast(){
+    toast.classList.add("show");
+    setTimeout(()=>toast.classList.remove("show"),1500);
+}
 
-    function calculate(){
+function copyText(text){
+    navigator.clipboard.writeText(text);
+    showToast();
+}
 
-        const a = parseFloat(amount.value);
-        const r = parseFloat(currencyUsdt.value);
-        const u = parseFloat(usdtPkr.value);
-        const c = parseFloat(clientRate.value);
-        const t = clientType.value;
+function calculate(){
 
-        if(!a || !r){
-            output.innerHTML = "Enter values above to see result.";
-            return;
-        }
+    const amount = parseFloat(amountInput.value);
+    const curRate = parseFloat(currencyUsdtInput.value);
+    const usdtPkr = parseFloat(usdtPkrInput.value);
+    const clientRate = parseFloat(clientRateInput.value);
+    const clientType = clientTypeInput.value;
 
-        const marketUSDT = a / r;
-        let html = `<div class="row"><b>Currency → USDT:</b> ${marketUSDT.toFixed(3)}</div>`;
-
-        if(u){
-            const totalPKR = marketUSDT * u;
-            const finalRate = totalPKR / a;
-
-            html += `
-                <div class="highlight row">Final Currency → PKR Rate: ${finalRate.toFixed(2)}</div>
-                <hr>
-                <div class="row copy-row">
-                    <span><b>Total PKR:</b> ${totalPKR.toLocaleString()} PKR</span>
-                    <span class="copy-icon" onclick="copyText('${totalPKR} PKR')">📋</span>
-                </div>
-            `;
-        }
-
-        if(c && t === "PKR" && u){
-            const clientPKR = c * a;
-            const profit = (marketUSDT * u) - clientPKR;
-
-            html += `
-                <div class="row copy-row">
-                    <span><b>Client PKR:</b> ${clientPKR.toLocaleString()} PKR</span>
-                    <span class="copy-icon" onclick="copyText('${clientPKR} PKR')">📋</span>
-                </div>
-                <div class="row profit copy-row">
-                    <span><b>Your Profit:</b> ${profit.toFixed(2)} PKR</span>
-                    <span class="copy-icon" onclick="copyText('${profit.toFixed(2)} PKR')">📋</span>
-                </div>
-            `;
-        }
-
-        if(c && t === "USDT"){
-            const clientUSDT = a / c;
-            const profitUSDT = marketUSDT - clientUSDT;
-
-            html += `
-                <div class="row copy-row">
-                    <span><b>Client USDT:</b> ${clientUSDT.toFixed(2)} USDT</span>
-                    <span class="copy-icon" onclick="copyText('${clientUSDT.toFixed(2)} USDT')">📋</span>
-                </div>
-                <div class="row profit copy-row">
-                    <span><b>Your Profit:</b> ${profitUSDT.toFixed(2)} USDT</span>
-                    <span class="copy-icon" onclick="copyText('${profitUSDT.toFixed(2)} USDT')">📋</span>
-                </div>
-            `;
-        }
-
-        output.innerHTML = html;
+    if(!amount || !curRate){
+        output.innerHTML = "Enter values above to see result.";
+        return;
     }
 
-    document.querySelectorAll("input,select").forEach(el=>{
-        el.addEventListener("input", calculate);
-        el.addEventListener("change", calculate);
-    });
+    let html = "";
+    const marketUSDT = amount / curRate;
 
-    calculate();
-});
-</script>
+    html += `<div class="row"><b>Currency → USDT:</b> ${marketUSDT.toFixed(3)}</div>`;
 
-<script>
+    if(usdtPkr){
+        const totalPKR = marketUSDT * usdtPkr;
+        const finalRate = totalPKR / amount;
+
+        html += `
+        <div class="highlight row">Final Currency → PKR Rate: ${finalRate.toFixed(2)}</div>
+        <hr>
+        <div class="row total copy-row">
+            <span><b>Total PKR:</b> ${totalPKR.toLocaleString(undefined,{maximumFractionDigits:0})} PKR</span>
+            <span class="copy-icon" onclick="copyText('${totalPKR.toFixed(0)} PKR')">📋</span>
+        </div>`;
+    }
+
+    if(clientRate && clientType === "PKR" && usdtPkr){
+        const clientPKR = clientRate * amount;
+        const profitPKR = (marketUSDT * usdtPkr) - clientPKR;
+
+        html += `
+        <div class="row client copy-row">
+            <span><b>Client PKR:</b> ${clientPKR.toLocaleString()} PKR</span>
+            <span class="copy-icon" onclick="copyText('${clientPKR.toFixed(0)} PKR')">📋</span>
+        </div>
+        <div class="row profit copy-row">
+            <span><b>Your Profit:</b> ${profitPKR.toFixed(2)} PKR</span>
+            <span class="copy-icon" onclick="copyText('${profitPKR.toFixed(2)} PKR')">📋</span>
+        </div>`;
+    }
+
+    if(clientRate && clientType === "USDT"){
+        const clientUSDT = amount / clientRate;
+        const profitUSDT = marketUSDT - clientUSDT;
+
+        html += `
+        <div class="row client copy-row">
+            <span><b>Client USDT:</b> ${clientUSDT.toFixed(2)} USDT</span>
+            <span class="copy-icon" onclick="copyText('${clientUSDT.toFixed(2)} USDT')">📋</span>
+        </div>
+        <div class="row profit copy-row">
+            <span><b>Your Profit:</b> ${profitUSDT.toFixed(2)} USDT</span>
+            <span class="copy-icon" onclick="copyText('${profitUSDT.toFixed(2)} USDT')">📋</span>
+        </div>`;
+    }
+
+    output.innerHTML = html;
+}
+
+/* Service Worker Register */
 if("serviceWorker" in navigator){
     navigator.serviceWorker.register("sw.js");
 }
